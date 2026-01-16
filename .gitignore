@@ -1,0 +1,11 @@
+*.pdf
+*.pdb
+*.out
+*.py
+!run.py
+makefile
+*.json
+*.csv
+/ignore
+*.txt
+nussinov.c
