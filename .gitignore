@@ -9,3 +9,5 @@ makefile
 /ignore
 *.txt
 nussinov.c
+*.o 
+Cfold copy.c
