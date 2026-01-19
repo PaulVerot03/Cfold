@@ -8,16 +8,16 @@
 #include <sys/types.h>
 #include <omp.h>
 
-#define BACKBONE_DIST 6.0f   /* Ideal P-to-P distance (Ångströms) - RNA backbone spacing */
-#define BASE_PAIR_DIST 10.0f /* Ideal Watson-Crick pair distance (Ångströms) */
-#define REPULSION_DIST 12.0f /* Excluded volume cutoff (Ångströms) - atoms can't come closer */
-#define K_BOND 1.0f          /* Spring constant for bonds (kcal/mol/Å²) */
-#define K_REPEL 1.0f         /* Spring constant for repulsion (kcal/mol/Å²) */
-#define LEARNING_RATE 0.2f   /* Initial step size for molecular dynamics (Ångströms) */
-#define ITERATIONS 50000     /* Number of MD iterations - allows time for convergence */
-#define MAX_FORCE 10.0f      /* Force clamping limit - prevents numerical instability (Å/iter) */
+#define BACKBONE_DIST 6.0f   
+#define BASE_PAIR_DIST 10.0f 
+#define REPULSION_DIST 12.0f 
+#define K_BOND 1.0f  
+#define K_REPEL 1.0f       
+#define LEARNING_RATE 0.2f 
+#define ITERATIONS 50000    
+#define MAX_FORCE 10.0f     
 
-#define MAX_SEQ_LEN 8096 /* Maximum sequence length supported */
+#define MAX_SEQ_LEN 8096 
 
 typedef struct
 {
@@ -262,16 +262,7 @@ void apply_angular_force(Vec3 p_prev, Vec3 p_curr, Vec3 p_next, Vec3 *forces, in
 }
 
 /*
- *   Outer loop: 50,000 iterations
- *   Backbone bonds: O(n)
- *   Base pairs: O(#pairs)
- *   Repulsion: O(n²) per iteration (pairwise comparison)
- *   Total: O(n² * ITERATIONS) = O(50000 * n²)
- *
- * TYPICAL RUNTIMES:
- *   n = 100 nt: ~1-2 seconds
- *   n = 500 nt: ~50-100 seconds
- *   n = 1000 nt: 200-400 seconds
+O(n² * ITERATIONS) = O(50000 * n²)
  */
 void physics_fold_serial(int n, Vec3 *coords, Pair *pairs, int pair_count)
 {
@@ -570,7 +561,9 @@ void save_pdb(const char *filename, int n, const char *seq, Vec3 *coords)
     }
 
     int BB_BONDS[][2] = {
-        {0, 1}, {0, 2}, {0, 3},
+        {0, 1}, 
+        {0, 2}, 
+        {0, 3},
         {3, 4},                
         {4, 5},                
         {5, 6},
@@ -583,7 +576,8 @@ void save_pdb(const char *filename, int n, const char *seq, Vec3 *coords)
     int BB_BOND_COUNT = 11;
 
     int BASE_BONDS[][2] = {
-        {0, 1}, {0, 9}, 
+        {0, 1}, 
+        {0, 9}, 
         {1, 2},         
         {2, 3},        
         {3, 4},

@@ -33,7 +33,7 @@ The function returns a list of (i,j) base pair indices
 
 ### 2 | Preliminary 3D structure
 `rotate_base_template()`
-We start by shaping the list into a helix by rotating 90° each pair of the list on the XY plane using a matrix multiplication 
+We start by shaping the list into a helix by rotating 90° each pair of the list on the XY plane 
 
 The goal is to start from a simple shape and then use a bunch of constraints to deform the model which is somewhat what the paper about the formal grammar does. TBH i barely understood half of the paper so i assume it's what's it's doing.
 
