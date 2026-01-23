@@ -64,13 +64,14 @@ LEARNING_RATE = 0.2 // Initial step size (Å)
 ITERATIONS = 50000 // The good thing is that this is only linear
 TEMPERATURE_DECAY = 0.2// Simulated annealing rate
 ```
-This is the biggest guess work, i'm sure we need to tweak the values
+This is the biggest guess work, i'm sure we need to tweak the values as they are mostly arbitrary
 
-This function has the biggest cost @ O(3 n + (seq_len * n^2)) 
+This function has the biggest cost @ O(ITERATIONS * (3 n + (seq_len * n^2))) 
 
 There is 2 implementation of this logic, one that runs in serial for short sequences and one that runs in parallel. 
 `physics_fold_serial(int n, Vec3* coords, Pair* pairs, int pair_count)`
 `physics_fold_parallel(int n, Vec3* coords, Pair* pairs, int pair_count)`
+because for short sequence, we loose more time initializing the paralelization than if we just bruteforced the sequence in mono-thread
 
 ### 4 | 3D Representation 
 Now we need to take the array with all the updated coordinates and map it. 
@@ -87,19 +88,22 @@ What in the ever-loving fuck is this shit ?
 
 Saving to PDB is just a matter of reading the documentation for the format and printing with the correct line heading.
 PDB are saved to the PDB folder (creates it if !found)
+Documentation for PDB is shite so we may have weird stuff going on
 
 ### 5 | Stats
-Because we want to know additional infos, we need to compute some statistics 
-So we do energy and gyration (distance to center)
+Because we want to know additional infos, we need to compute some statistics
+So we do energy and gyration (distance to center, so roughly half the diameter)
 
 And then we have `main()` which just does launches the calculation and prints stats about computation time
 
 ## Running this program
 
 I use a Python wrapper that compiles and run the c file, and print compile and compute time. Set sequence in the `run.py` file.
-`python3 run.py Cfold.c "comment for the log file"`
+`python3 run.py Cfold.c "comment for the log file"`, i forgot how to make an argument optional , so you have to include a comment
 
-Then go brew yourself a coffee because this will take a little while. It took me about 10 min for a 3000 nucleotide sequence
+Then go brew yourself a coffee because this will take a little while. It took me about 13 min for a 3000 nucleotide sequence
+I may try to implement a time estimation based on the computer's hardware and sequence lenght and iterations, but I don't know how accurate that could be.
+I guess I just need infos from /proc/cpu* and that could be done in the python wrapper if in can somehow read iteration number from the C file in python, or pass it as an argument ?  
 
 ## References 
 https://users.cs.duke.edu/~brd/Teaching/Previous/Bio/2000/New-Readings/rivas-eddy-jmb.pdf
