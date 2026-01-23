@@ -12,6 +12,5 @@ nussinov.c
 *.o 
 Cfold copy.c
 nussinov.h
-nussinov_lib.h
 Cfold
 nussinov
