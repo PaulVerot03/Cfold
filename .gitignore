@@ -8,9 +8,7 @@ makefile
 *.csv
 /ignore
 *.txt
-nussinov.c
 *.o 
 Cfold copy.c
 nussinov.h
 Cfold
-nussinov
