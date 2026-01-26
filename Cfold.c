@@ -76,7 +76,7 @@ typedef struct {
 
 #define K_ANGLE 0.2f
 #define ANGLE_TARGET 2.0f
-#define K_CENTROID 0.1f
+#define K_CENTROID 0.01f
 
 void add_force(Vec3 *forces, int idx, Vec3 f) {
   forces[idx].x += f.x;
@@ -354,7 +354,9 @@ void physics_fold_parallel(int n, Vec3 *coords, Pair *pairs, int pair_count) {
         center = vec_add(center, coords[i]);
       center = vec_scale(center, 1.0f / n);
 
-      /* Apply Centroid Force - Distribute work */
+      /* Apply Centroid Force - Distribute work */ // This is what gives the
+                                                   // round appearence, it's
+                                                   // probably whack
 #pragma omp for schedule(static) nowait
       for (int i = 0; i < n; i++) {
         Vec3 d = vec_sub(center, coords[i]);
@@ -681,7 +683,10 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
   /* A-form RNA approx params */
   float RISE = 2.8f; /* Angstrom rise per bp */ // typical A-DNA/RNA
   float RADIUS = 6.0f;                          /* Approx backbone radius */
-  float TWIST = 30.0f * (M_PI / 180.0f); /* Reduced twist to avoid tightness */
+  float TWIST = 30.0f; /* Reduced twist to avoid tightness */
+  // float TWIST = 0.0f;
+
+  // I am making a butt-ton of assumptions here
 
   /* Initialize in a spiral/helix */
   for (int i = 0; i < n; i++) {
@@ -690,24 +695,14 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
 
     /*
      * If this base is paired, we might want to respect that?
-     * But physics will draw them together.
-     * Better to start in a single strand helix-like shape,
-     * so it doesn't just look like a ladder.
-     * The Nussinov pairs will then crunch it into fold.
-     * However, if i and j are paired, they should be roughly "opposite" or
-     * close?
-     *
-     * Actually, if we just initialize as a long single-strand helix,
-     * distant pairs (i, j) will be far apart in Z.
-     * The physics engine's bond forces (long distance) might be unstable?
-     * But we have K_BOND.
-     *
-     * Let's stick to the ladder logic BUT twist the ladder!
+     * Actually, if we just initialize as a long single-strand helix, distant
+     * pairs (i, j) will be far apart in Z. The physics engine's bond forces
+     * (long distance) might be unstable?
      */
-
     /* Re-implementing the constructive logic but with twist */
 
     // Base position in loose helix
+
     coords[i].x = RADIUS * cosf(angle);
     coords[i].y = RADIUS * sinf(angle);
     coords[i].z = z;
@@ -721,10 +716,28 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
   printf("Constructive 3D initialization (Helix) complete.\n");
 }
 
+void layout_flat_circle(int n, Vec3 *coords) {
+  float circumference = n * 8.0f; // Space them out a bit
+  float radius = circumference / (2.0f * M_PI);
+
+  for (int i = 0; i < n; i++) {
+    float angle = 2.0f * M_PI * (float)i / (float)n;
+    coords[i].x = radius * cosf(angle);
+    coords[i].y = radius * sinf(angle);
+    coords[i].z = 0.0f;
+  }
+  printf("2D Flat Circle layout complete.\n");
+}
+
 int main(int argc, char **argv) {
   if (argc < 2) {
-    printf("Usage: %s <sequence> [unused]\n", argv[0]);
+    printf("Usage: %s <sequence> [--flat]\n", argv[0]);
     return 1;
+  }
+
+  bool flat_mode = false;
+  if (argc >= 3 && strcmp(argv[2], "--flat") == 0) {
+    flat_mode = true;
   }
 
   rotate_base_template();
@@ -759,8 +772,12 @@ int main(int argc, char **argv) {
   double start_3d_init = omp_get_wtime();
   Vec3 *coords = malloc(n * sizeof(Vec3));
 
-  /* Use constructive initialization instead of spiral */
-  init_tertiary_structure(n, seq, pairs, pair_count, coords);
+  if (flat_mode) {
+    layout_flat_circle(n, coords);
+  } else {
+    /* Use constructive initialization instead of spiral */
+    init_tertiary_structure(n, seq, pairs, pair_count, coords);
+  }
 
   double end_3d_init = omp_get_wtime();
 
@@ -768,7 +785,13 @@ int main(int argc, char **argv) {
   float init_rg = compute_radius_of_gyration(n, coords);
 
   double start_physics = omp_get_wtime();
-  physics_fold(n, coords, pairs, pair_count);
+
+  if (!flat_mode) {
+    physics_fold(n, coords, pairs, pair_count);
+  } else {
+    printf("Skipping physics fold (Flat mode).\n");
+  }
+
   double end_physics = omp_get_wtime();
 
   double start_save = omp_get_wtime();

@@ -31,7 +31,9 @@ In this implementation, complexity is about O(n^3)
 
 The function returns a list of (i,j) base pair indices
 
-### 2 | Preliminary 3D structure
+### 2 | Preliminary 3D structure 
+So this was on the first iteration of this program, this is voluntarily incorect, it was made to test the folding logic. To see if I was getting anywhere before trying to fit the 2 together. 
+*OLD VERSION:* 
 `rotate_base_template()`
 We start by shaping the list into a helix by rotating 90° each pair of the list on the XY plane 
 
@@ -40,6 +42,14 @@ The goal is to start from a simple shape and then use a bunch of constraints to 
 IDK if you've seen videos of blacksmiths twisting metal red hot, it's kinda like that
 
 Outputs a list of vectors
+
+*NEW VERSION:* 
+
+We compute the secondary structure using the nussinov library, which returns a list of pairs. 
+We then put those pairs in a sort of helix. i am making the assumption that the secondary structure is a helix, which is probably not true but i'm guessing this whole thing 
+
+Then we can refine the structure using the physics fold function
+
 
 ### 3 | Refining 3D structure
 So this will do in a shit load of iterations the following : 
@@ -51,6 +61,7 @@ So this will do in a shit load of iterations the following :
 - update position → pure hell of linear algebra and Euler wizardry  
 - decrease temp → simulates annealing 
 	- this is basically a linear program that tries to minimise $E(bond)+E(base pair) +E(repulsion)$ while $\begin{cases} E(bond) = \sum \frac{K\_BOND \times (d_i - d_0)²}{2} \\ E(base\_pair) = \sum \frac{5 \times K\_BOND \times (d\_bp - d\_bp_0)²}{2} \\ E(repulsion) = \sum \frac{K\_REPEL \times (d_repul - d_{ij})²}{2} \text{ for } d_{ij} < d\_repul \end{cases}$
+Basically i'm trying to get an MFE
 
 
 ```C
@@ -72,6 +83,8 @@ There is 2 implementation of this logic, one that runs in serial for short seque
 `physics_fold_serial(int n, Vec3* coords, Pair* pairs, int pair_count)`
 `physics_fold_parallel(int n, Vec3* coords, Pair* pairs, int pair_count)`
 because for short sequence, we loose more time initializing the paralelization than if we just bruteforced the sequence in mono-thread
+
+Each thread does 25 atoms, we might have a problem with that. Meaning the cutoff might reduce accurary. It's probbaly worth it to toy with the value.
 
 ### 4 | 3D Representation 
 Now we need to take the array with all the updated coordinates and map it. 
@@ -99,7 +112,7 @@ And then we have `main()` which just does launches the calculation and prints st
 ## Running this program
 
 I use a Python wrapper that compiles and run the c file, and print compile and compute time. Set sequence in the `run.py` file.
-`python3 run.py Cfold.c "comment for the log file"`, i forgot how to make an argument optional , so you have to include a comment
+`python3 run.py Cfold.c "comment for the log file"`, i forgot how to make an argument optional , so you have to include a comment, i could look this up, or i can write a comment each time
 
 Then go brew yourself a coffee because this will take a little while. It took me about 13 min for a 3000 nucleotide sequence
 I may try to implement a time estimation based on the computer's hardware and sequence lenght and iterations, but I don't know how accurate that could be.
