@@ -247,8 +247,8 @@ void apply_dihedral_force(Vec3 *coords, Vec3 *forces, int p1, int p2, int p3,
 }
 
 /*
-O(n² * ITERATIONS) = O(50000 * n²)
- */
+O(n² * ITERATIONS) = O(50000 * n² + 5n)
+*/
 void physics_fold_serial(int n, Vec3 *coords, Pair *pairs, int pair_count) {
   printf("running in serial mode for small N...\n");
   Vec3 *forces = malloc(n * sizeof(Vec3));

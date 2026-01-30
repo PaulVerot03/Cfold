@@ -39,6 +39,7 @@ if __name__ == "__main__":
     os.system(f"gcc -lpthread -fopenmp -o {args.f.strip('.c')}.out {args.f} nussinov.c -lm")
     Cend_time = time.time()
     start_time = time.time()
+    
     for sequence in sequences:
         i += 1
         print(f"\n--RUNNING SEQUENCE {i} OF LENGTH {len(sequence)})--\n")

@@ -27,26 +27,16 @@ For each cell $D_(i,j)$ :
 - if i and j do not make a pair, then we take D(i,j-i)
 And then cell value is updated to the max of those two.
 
+MFE can be computed to evaluate best structure. *TBD*
+
 In this implementation, complexity is about O(n^3)
 
 The function returns a list of (i,j) base pair indices
 
 ### 2 | Preliminary 3D structure 
-So this was on the first iteration of this program, this is voluntarily incorect, it was made to test the folding logic. To see if I was getting anywhere before trying to fit the 2 together. 
-*OLD VERSION:* 
-`rotate_base_template()`
-We start by shaping the list into a helix by rotating 90° each pair of the list on the XY plane 
-
-The goal is to start from a simple shape and then use a bunch of constraints to deform the model which is somewhat what the paper about the formal grammar does. TBH i barely understood half of the paper so i assume it's what's it's doing.
-
-IDK if you've seen videos of blacksmiths twisting metal red hot, it's kinda like that
-
-Outputs a list of vectors
-
-*NEW VERSION:* 
-
 We compute the secondary structure using the nussinov library, which returns a list of pairs. 
-We then put those pairs in a sort of helix. i am making the assumption that the secondary structure is a helix, which is probably not true but i'm guessing this whole thing 
+Then we put those pairs in a sort of helix. The reason for this that I got better structure when doing this. Which may be a hint to some inneficiencies in the code some place else. 
+Without such modification, structure remains "flat". This part of the code needs to be looked at more carefuly as I suppose the assumption I am making here may lead to innacuracies.
 
 Then we can refine the structure using the physics fold function
 
@@ -62,6 +52,7 @@ So this will do in a shit load of iterations the following :
 - decrease temp → simulates annealing 
 	- this is basically a linear program that tries to minimise $E(bond)+E(base pair) +E(repulsion)$ while $\begin{cases} E(bond) = \sum \frac{K\_BOND \times (d_i - d_0)²}{2} \\ E(base\_pair) = \sum \frac{5 \times K\_BOND \times (d\_bp - d\_bp_0)²}{2} \\ E(repulsion) = \sum \frac{K\_REPEL \times (d_repul - d_{ij})²}{2} \text{ for } d_{ij} < d\_repul \end{cases}$
 Basically i'm trying to get an MFE
+Minimizing energy leads to a more stable structure because we want to minimize potential energy. This is like a coil spring from a car, when handleing it, we want it to have a minimum of energy. 
 
 
 ```C

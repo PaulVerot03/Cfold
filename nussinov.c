@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Standard Nussinov Algorithm Implementation
 
 bool is_valid_pair_nussinov(char a, char b) {
   return (a == 'A' && b == 'U') || (a == 'U' && b == 'A') ||
@@ -42,14 +41,12 @@ static void traceback_internal(int n, int (*dp)[n], const char *sequence, int i,
 Pair *nussinov_predict(const char *seq, int *out_count) {
   int n = strlen(seq);
 
-  // Dynamic Programming Table
   int (*dp)[n] = malloc(sizeof(int[n][n]));
   if (!dp) {
     fprintf(stderr, "Memory allocation failed\n");
     return NULL;
   }
 
-// Initialize DP
 #pragma omp parallel for collapse(2)
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
@@ -57,7 +54,6 @@ Pair *nussinov_predict(const char *seq, int *out_count) {
     }
   }
 
-  // Fill DP Table
   for (int k = 1; k < n; k++) {
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < n - k; i++) {
@@ -83,7 +79,6 @@ Pair *nussinov_predict(const char *seq, int *out_count) {
     }
   }
 
-  // Traceback
   int max_pairs = dp[0][n - 1];
   *out_count = 0;
 
@@ -114,7 +109,6 @@ int main(int argc, char *argv[]) {
 
   printf("Max Pairs: %d\n", count);
 
-  // Print Dot-Bracket Structure
   char *structure = malloc(n + 1);
   memset(structure, '.', n);
   structure[n] = '\0';
@@ -126,7 +120,6 @@ int main(int argc, char *argv[]) {
 
   printf("Structure: %s\n", structure);
 
-  // CSV Output
   FILE *fpt = fopen("output.csv", "w+");
   fprintf(fpt, "dot-bracket, pairs\n");
   fprintf(fpt, "%s, %d\n", structure, count);
