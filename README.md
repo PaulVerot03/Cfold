@@ -11,6 +11,10 @@
 
 BTW none of this will work on windows, it might work on Mac, but just use Linux like any sensible human being
 
+All relevant sources and academic literature may be found in the .bib file 
+
+TBD : link specific publication to methods in code and comments
+
 ### 1 | Nussinov Algorithm 
 based on : 
 https://rna.informatik.uni-freiburg.de/Teaching/index.jsp?toolName=Nussinov
