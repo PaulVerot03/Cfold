@@ -1,4 +1,4 @@
-# We need a catchy name for this
+# CFold
 ## What this program does is :
 1) Computes Secondary Structure using the Nussinov algorithm 
 2) Computes Tertiary Structure based on molecular properties 

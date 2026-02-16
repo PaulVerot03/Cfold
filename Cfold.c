@@ -18,7 +18,7 @@
 #define ITERATIONS 100000
 #define MAX_FORCE 10.0f
 
-#define MAX_SEQ_LEN 8096
+// #define MAX_SEQ_LEN 8096
 
 typedef struct {
   float x, y, z;
@@ -151,7 +151,7 @@ void apply_dihedral_force(Vec3 *coords, Vec3 *forces, int p1, int p2, int p3,
   float y = vec_dot(m1, n2_hat);
 
   float phi = atan2f(y, x); /* Current dihedral */
-  float d_phi = phi - TARGET_DIHEDRAL_RAD;
+  float d_phi = phi - TARGET_DIHEDRAL_RAD; /* This may throw an error, disregard it*/
 
   /* Force magnitude/direction logic simplified:
      Torque T = - dV/dphi = -K * sin(phi - phi0) if using cos form
@@ -249,6 +249,8 @@ void apply_dihedral_force(Vec3 *coords, Vec3 *forces, int p1, int p2, int p3,
 /*
 O(n² * ITERATIONS) = O(50000 * n² + 5n)
 */
+
+// This will probably go away, there is no point optimizing for short sequences
 void physics_fold_serial(int n, Vec3 *coords, Pair *pairs, int pair_count) {
   printf("running in serial mode for small N...\n");
   Vec3 *forces = malloc(n * sizeof(Vec3));
@@ -345,8 +347,7 @@ void physics_fold_parallel(int n, Vec3 *coords, Pair *pairs, int pair_count) {
       memset(local_forces, 0, n * sizeof(Vec3));
 
       /* Compute Center of Mass (Redundant calc per thread, but cheap O(N)) */
-      /* Or use a barrier. For now, let each thread compute it from shared
-       * coords. */
+      /* Or use a barrier. For now, let each thread compute it from shared coords. */
       /* NOTE: Coords are open to race conditions if updated while reading?
          No, updates happen at end of loop after barrier. Safe to read here. */
       Vec3 center = {0, 0, 0};
@@ -491,7 +492,7 @@ Mat3 get_frenet_frame(Vec3 prev, Vec3 curr, Vec3 next, bool has_prev) {
   return R;
 }
 
-void save_pdb(const char *filename, int n, const char *seq, Vec3 *coords) {
+void save_pdb(const char *filename, int n, const char *seq, Vec3 *coords) { /* This probably needs a rewrite, because i think my early implementation may be flawed*/
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
   FILE *f = fopen(filename, "w");
@@ -684,11 +685,10 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
   float RISE = 2.8f; /* Angstrom rise per bp */ // typical A-DNA/RNA
   float RADIUS = 6.0f;                          /* Approx backbone radius */
   float TWIST = 30.0f; /* Reduced twist to avoid tightness */
-  // float TWIST = 0.0f;
+// that's right, we do not care about B-form RNA
+// Looking for B-form ? Well that's too damm bad cause i cant do both
 
-  // I am making a butt-ton of assumptions here
-
-  /* Initialize in a spiral/helix */
+  /* Initialize in a spiral/helix because else i get something very flat, so i need to artificially introduce a topology*/
   for (int i = 0; i < n; i++) {
     float angle = i * TWIST;
     float z = i * RISE;
@@ -697,9 +697,8 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
      * If this base is paired, we might want to respect that?
      * Actually, if we just initialize as a long single-strand helix, distant
      * pairs (i, j) will be far apart in Z. The physics engine's bond forces
-     * (long distance) might be unstable?
+     * (long distance) might be unstable?  i need further literature on the subject
      */
-    /* Re-implementing the constructive logic but with twist */
 
     // Base position in loose helix
 
@@ -708,15 +707,12 @@ void init_tertiary_structure(int n, const char *seq, Pair *pairs,
     coords[i].z = z;
   }
 
-  /* Now adjust for pairs to bring them somewhat closer?
-     No, let the physics do it. That's the point of "folding".
-  */
 
   free(pair_map);
   printf("Constructive 3D initialization (Helix) complete.\n");
 }
 
-void layout_flat_circle(int n, Vec3 *coords) {
+void layout_flat_circle(int n, Vec3 *coords) { // shit's fucked, this makes a stupid circle
   float circumference = n * 8.0f; // Space them out a bit
   float radius = circumference / (2.0f * M_PI);
 
@@ -730,10 +726,19 @@ void layout_flat_circle(int n, Vec3 *coords) {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    printf("Usage: %s <sequence> [--flat]\n", argv[0]);
-    return 1;
+    char *seq;
+  // if (argc < 2) {
+  //   printf("Usage: %s <sequence> [--flat]\n", argv[0]);
+  //   return 1;
+  // }
+  // is all good if you use the propper amount of args
+  if (argc == 2){
+      seq = argv[1];
   }
+  else {
+      seq = "UCCGUGAUAGUUAAGGCAGAAUGGGCGCUGUCCGUGCCAGAUGGGGCAAUUCCCCGUCGCGGAG";
+  }
+  // this is done that way purely for sysprof to be less of a pain in my ass
 
   bool flat_mode = false;
   if (argc >= 3 && strcmp(argv[2], "--flat") == 0) {
@@ -742,11 +747,9 @@ int main(int argc, char **argv) {
 
   rotate_base_template();
 
-  char *seq = argv[1];
+
   int n = strlen(seq);
 
-  // Use Linux, or else i'll break in your house and forcefully convert you to
-  // Linux
   struct stat st = {0};
   if (stat("PDB", &st) == -1) {
     mkdir("PDB", 0777);
@@ -775,7 +778,6 @@ int main(int argc, char **argv) {
   if (flat_mode) {
     layout_flat_circle(n, coords);
   } else {
-    /* Use constructive initialization instead of spiral */
     init_tertiary_structure(n, seq, pairs, pair_count, coords);
   }
 
